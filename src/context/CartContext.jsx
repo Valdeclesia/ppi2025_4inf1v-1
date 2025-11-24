@@ -1,193 +1,175 @@
-import { useState, useEffect, createContext } from "react";
+import { createContext, useState, useEffect, useContext } from "react";
 import { supabase } from "../utils/supabase";
+import { SessionContext } from "./SessionContext";
 
 export const CartContext = createContext({
-  // Context to manage the products state
   products: [],
   loading: false,
   error: null,
-  // Context to manage the cart state
   cart: [],
   addToCart: () => {},
   updateQtyCart: () => {},
   removeFromCart: () => {},
   clearCart: () => {},
-  // Context to manage user session
-  session: null,
-  sessionLoading: false,
-  sessionMessage: null,
-  sessionError: null,
-  handleSignUp: () => {},
-  handleSignIn: () => {},
-  handleSignOut: () => {},
+  addProduct: () => {},
+  updateProduct: () => {},
+  deleteProduct: () => {},
+  refreshProducts: () => {},
 });
 
 export function CartProvider({ children }) {
+  const { session } = useContext(SessionContext);
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [cart, setCart] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Buscar produtos (reutilizável)
+  async function fetchProducts() {
+    setLoading(true);
+    const { data, error } = await supabase.from("product_1v").select();
+    if (error) setError(error.message);
+    else setProducts(data);
+    setLoading(false);
+  }
+
+  // Carregar produtos na montagem + realtime listener
   useEffect(() => {
-    async function fetchProductsSupabase() {
-      const { data, error } = await supabase.from("product").select();
-      if (error) {
-        setError(`Fetching products failed! ${error.message}`);
-      } else {
-        setProducts(data);
+    fetchProducts();
+
+    // Escuta em tempo real: insert, update e delete na tabela "product"
+    const channel = supabase
+      .channel("realtime-products")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "product" },
+        () => {
+          fetchProducts(); 
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Carregar carrinho do usuário logado
+  useEffect(() => {
+    if (!session) {
+      setCart([]);
+      return;
+    }
+
+    async function fetchCart() {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("cart")
+        .select("product_id, quantity, product(*)")
+        .eq("user_id", session.user.id);
+
+      if (error) setError(error.message);
+      else {
+        const formatted = data.map((i) => ({
+          ...i.product,
+          quantity: i.quantity,
+        }));
+        setCart(formatted);
       }
       setLoading(false);
     }
-    fetchProductsSupabase();
-    // State to manage products API
-    // var category = "smartphones";
-    // var limit = 10;
-    // var apiUrl = `https://dummyjson.com/products/category/${category}?limit=${limit}&select=id,thumbnail,title,price,description`;
 
-    // async function fetchProducts() {
-    //   try {
-    //     const response = await fetch(apiUrl);
-    //     const data = await response.json();
-    //     setProducts(data.products);
-    //   } catch (error) {
-    //     setError(error);
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // }
-    // fetchProducts();
-  }, []);
+    fetchCart();
+  }, [session]);
 
-  // State to manage the cart
-  const [cart, setCart] = useState([]);
+  // Adicionar produto ao carrinho
+  async function addToCart(product) {
+    if (!session) {
+      alert("Sign in first!");
+      return;
+    }
 
-  function addToCart(product) {
-    // Check if the product is already in the cart
-    const existingProduct = cart.find((item) => item.id === product.id);
-    if (existingProduct) {
-      updateQtyCart(product.id, existingProduct.quantity + 1);
+    const existing = cart.find((item) => item.id === product.id);
+    if (existing) {
+      updateQtyCart(product.id, existing.quantity + 1);
     } else {
-      setCart((prevCart) => [...prevCart, { ...product, quantity: 1 }]);
+      const { error } = await supabase.from("cart").insert({
+        user_id: session.user.id,
+        product_id: product.id,
+        quantity: 1,
+      });
+      if (!error) setCart((prev) => [...prev, { ...product, quantity: 1 }]);
     }
   }
 
-  function removeFromCart(productId) {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
+  // Atualizar quantidade no carrinho
+  async function updateQtyCart(productId, qty) {
+    if (!session) return;
+    const { error } = await supabase
+      .from("cart")
+      .update({ quantity: qty })
+      .eq("user_id", session.user.id)
+      .eq("product_id", productId);
+    if (!error)
+      setCart((prev) =>
+        prev.map((i) => (i.id === productId ? { ...i, quantity: qty } : i))
+      );
   }
 
-  function updateQtyCart(productId, quantity) {
-    setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.id === productId ? { ...item, quantity: quantity } : item
-      )
-    );
+  // Remover item do carrinho
+  async function removeFromCart(productId) {
+    if (!session) return;
+    await supabase
+      .from("cart")
+      .delete()
+      .eq("user_id", session.user.id)
+      .eq("product_id", productId);
+    setCart((prev) => prev.filter((i) => i.id !== productId));
   }
 
-  function clearCart() {
+  // Limpar carrinho
+  async function clearCart() {
+    if (!session) return;
+    await supabase.from("cart").delete().eq("user_id", session.user.id);
     setCart([]);
   }
 
-  // User Session Management
-  const [session, setSession] = useState(null);
-  const [sessionLoading, setSessionLoading] = useState(false);
-  const [sessionMessage, setSessionMessage] = useState(null);
-  const [sessionError, setSessionError] = useState(null);
-
-  async function handleSignUp(email, password, username) {
-    setSessionLoading(true);
-    setSessionMessage(null);
-    setSessionError(null);
-
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            username: username,
-            admin: false,
-          },
-          emailRedirectTo: `${window.location.origin}/signin`,
-        },
-      });
-
-      if (error) throw error;
-
-      if (data.user) {
-        setSessionMessage(
-          "Registration successful! Check your email to confirm your account."
-        );
-        window.location.href = "/signin";
-      }
-    } catch (error) {
-      setSessionError(error.message);
-    } finally {
-      setSessionLoading(false);
-    }
+  // Admin: adicionar novo produto
+  async function addProduct(newProduct) {
+    const { error } = await supabase.from("product").insert(newProduct);
+    if (error) setError(error.message);
   }
 
-  async function handleSignIn(email, password) {
-    setSessionLoading(true);
-    setSessionMessage(null);
-    setSessionError(null);
-
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      if(data.session){
-        setSession(data.session);
-        setSessionMessage("Sign in successful!");
-      }
-    } catch (error) {
-      setSessionError(error.message);
-    } finally {
-      setSessionLoading(false);
-    }
+  // Admin: atualizar produto existente
+  async function updateProduct(id, updates) {
+    const { error } = await supabase.from("product").update(updates).eq("id", id);
+    if (error) setError(error.message);
   }
 
-  async function handleSignOut() {
-    setSessionLoading(true);
-    setSessionMessage(null);
-    setSessionError(null);
-
-    try {
-      const { error } = await supabase.auth.signOut();
-
-      if (error) throw error;
-
-      setSession(null);
-      window.location.href = "/";
-    } catch (error) {
-      setSessionError(error.message);
-    } finally {
-      setSessionLoading(false);
-    }
+  // Admin: deletar produto
+  async function deleteProduct(id) {
+    const { error } = await supabase.from("product").delete().eq("id", id);
+    if (error) setError(error.message);
   }
-
-  const context = {
-    products: products,
-    loading: loading,
-    error: error,
-    cart: cart,
-    addToCart: addToCart,
-    updateQtyCart: updateQtyCart,
-    removeFromCart: removeFromCart,
-    clearCart: clearCart,
-    // Context to manage user session
-    session: session,
-    sessionLoading: sessionLoading,
-    sessionMessage: sessionMessage,
-    sessionError: sessionError,
-    handleSignUp: handleSignUp,
-    handleSignIn: handleSignIn,
-    handleSignOut: handleSignOut,
-  };
 
   return (
-    <CartContext.Provider value={context}>{children}</CartContext.Provider>
+    <CartContext.Provider
+      value={{
+        products,
+        loading,
+        error,
+        cart,
+        addToCart,
+        updateQtyCart,
+        removeFromCart,
+        clearCart,
+        addProduct,
+        updateProduct,
+        deleteProduct,
+        refreshProducts: fetchProducts,
+      }}
+    >
+      {children}
+    </CartContext.Provider>
   );
 }

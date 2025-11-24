@@ -1,8 +1,8 @@
 
 :root[data-theme="light"] {
-  --primary: #f49097;
+  --primary: #56daf1;
   --primary-light: #fcd6da;
-  --primary-dark: #a04e56;
+  --primary-dark: #f3b9bf;
   --primary-contrast: #111;
   --background: #fff;
   --text: #212529;
@@ -19,12 +19,12 @@
 }
 
 :root[data-theme="dark"] {
-  --primary: #f49097;
-  --primary-light: #a04e56;
-  --primary-dark: #fcd6da;
-  --primary-contrast: #fff;
+  --primary: #97d6d1;
+  --primary-light: #07064b;
+  --primary-dark: #32a198;
+  --primary-contrast: #000000;
   --background: #1a1a1a;
-  --text: #f8f9fa;
+  --text: #ffffff;
   
   --gray-900: #f8f9fa;
   --gray-800: #e9ecef;

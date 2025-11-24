@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 15rem;
+  margin-top: 10rem;
   gap: 2rem;
   padding: 2rem;
 }
@@ -13,7 +13,7 @@
   margin-bottom: 1rem;
 }
 
-.userInfo{
+.userInfo {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -23,17 +23,128 @@
 
 .button {
   margin-top: 0.5rem;
-  padding: 1.5rem 3rem;
+  padding: 1.2rem 2.5rem;
   border: none;
   border-radius: 0.75rem;
   background-color: var(--primary);
   color: var(--gray-900);
-  font-size: 2rem;
-  font-weight: bolder;
+  font-size: 1.8rem;
+  font-weight: bold;
   transition: all 0.2s ease;
   cursor: pointer;
 }
 
 .button:hover {
   background-color: var(--primary-dark);
+  transform: translateY(-2px);
+}
+
+/* ---------------- Admin product manager ---------------- */
+
+.input {
+  padding: 1rem 1.2rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--gray-400);
+  font-size: 1.6rem;
+  width: 100%;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.3);
+}
+
+.productList {
+  display: grid;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 1000px;
+}
+
+.productCard {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid var(--gray-300);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  background-color: var(--gray-100);
+  transition: all 0.2s ease;
+}
+
+.productCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.productImage {
+  width: 8rem;
+  height: 8rem;
+  border-radius: 0.5rem;
+  background-color: var(--gray-300);
+  object-fit: cover;
+}
+
+.productInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 1.6rem;
+}
+
+.productInfo strong {
+  color: var(--primary);
+  font-size: 1.8rem;
+}
+
+.productActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.productActions button {
+  font-size: 1.4rem;
+  padding: 0.6rem 1rem;
+}
+
+.error {
+  color: #ff4b4b;
+  font-weight: bold;
+  font-size: 1.4rem;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .container {
+    margin-top: 6rem;
+    padding: 1rem;
+  }
+
+  .container h1 {
+    font-size: 3rem;
+  }
+
+  .userInfo {
+    font-size: 1.6rem;
+  }
+
+  .productCard {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .productImage {
+    width: 100%;
+    height: 200px;
+  }
+
+  .productActions {
+    flex-direction: row;
+    justify-content: flex-end;
+    width: 100%;
+  }
 }

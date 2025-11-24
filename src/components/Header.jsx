@@ -4,9 +4,11 @@ import { Link } from "react-router";
 import { useContext } from "react";
 import { CartContext } from "../context/CartContext";
 import { ThemeToggle } from "./ThemeToggle";
+import { SessionContext } from "../context/SessionContext";
 
 export function Header() {
-  const { cart, session } = useContext(CartContext);
+  const { cart } = useContext(CartContext);
+  const { session } = useContext(SessionContext);
 
   return (
     <div className={styles.container}>

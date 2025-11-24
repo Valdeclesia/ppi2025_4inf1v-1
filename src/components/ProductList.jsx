@@ -1,37 +1,29 @@
 import styles from "./ProductList.module.css";
 import { CircularProgress } from "@mui/material";
 import { Product } from "./Product";
-import { useState, useContext, useEffect, useRef } from "react";
+import { useContext, useRef, useState } from "react";
 import { CartContext } from "../context/CartContext";
 
 export function ProductList() {
-  
   const { products, loading, error } = useContext(CartContext);
-
-  const [filteredProducts, setFilteredProducts] = useState([]);
-
   const searchInput = useRef(null);
+  const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    if(products) {
-      setFilteredProducts(products);
-    }
-  }, [products]);
-
-  function handleSearch() {
+  const handleSearch = () => {
     const query = searchInput.current.value.toLowerCase();
-    setFilteredProducts(
-      products.filter((product) =>
-        product.title.toLowerCase().includes(query) || 
-        product.description.toLowerCase().includes(query)
-      )
-    );
-  }
+    setSearch(query);
+  };
 
-  function handleClear() {
+  const handleClear = () => {
     searchInput.current.value = "";
-    setFilteredProducts(products);
-  }
+    setSearch("");
+  };
+
+  const filteredProducts = products.filter(
+    (product) =>
+      product.title.toLowerCase().includes(search) ||
+      product.description.toLowerCase().includes(search)
+  );
 
   return (
     <div className={styles.container}>
@@ -39,12 +31,12 @@ export function ProductList() {
         <input
           ref={searchInput}
           type="text"
-          placeholder="Search products..."
+          placeholder="Search for products..."
           className={styles.searchInput}
           onChange={handleSearch}
         />
         <button className={styles.searchButton} onClick={handleClear}>
-          CLEAR
+          Clear
         </button>
       </div>
       <div className={styles.productList}>
@@ -62,7 +54,7 @@ export function ProductList() {
           <p>Loading products...</p>
         </div>
       )}
-      {error && <p>❌ {error}</p>}
+      {error && <p>❌{error} </p>}
     </div>
   );
 }
