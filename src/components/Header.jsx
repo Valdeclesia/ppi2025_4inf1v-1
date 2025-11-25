@@ -11,14 +11,16 @@ export function Header() {
   const { session } = useContext(SessionContext);
 
   return (
-    <div className={styles.container}>
-      <div>
+    <header className={styles.header}>
+      <div className={styles.leftBox}>
         <Link to="/" className={styles.link}>
           <h1>TJA Megastore</h1>
         </Link>
+
         {session && (
           <Link to="/user" className={styles.welcomeMessage}>
-            Welcome, {session.user.user_metadata.username} {session.user.user_metadata.admin && '⭐'}
+            Welcome, {session.user.user_metadata.username}{" "}
+            {session.user.user_metadata.admin && "⭐"}
           </Link>
         )}
       </div>
@@ -34,23 +36,26 @@ export function Header() {
             </Link>
           </>
         )}
+
         <ThemeToggle />
+
         <Link to="/cart" className={styles.link}>
           <div className={styles.cartInfo}>
             <div className={styles.cartIcon}>
               <ShoppingBasket size={32} />
               {cart.length > 0 && (
                 <span className={styles.cartCount}>
-                  {cart.reduce((total, item) => total + item.quantity, 0)}
+                  {cart.reduce((t, i) => t + i.quantity, 0)}
                 </span>
               )}
             </div>
 
             <p>
-              Total: ${" "}
+              Total: $
               {cart
                 .reduce(
-                  (total, product) => total + product.price * product.quantity,
+                  (total, product) =>
+                    total + product.price * product.quantity,
                   0
                 )
                 .toFixed(2)}
@@ -58,6 +63,6 @@ export function Header() {
           </div>
         </Link>
       </div>
-    </div>
+    </header>
   );
 }
